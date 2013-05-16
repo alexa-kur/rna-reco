@@ -12,7 +12,14 @@ open my $csfasta_file,"<","$ARGV[0]";
 while (!eof $csfasta_file){
     my $header = <$csfasta_file>;
     my $string = <$csfasta_file>;
-    #cut string first letter and string seprartor
+
+    print $header;
+    print join " ", translate_string($string);
+    print "\n";
+}
+
+sub translate_string {
+    my $string = $_[0];
     chomp $string;
     $string =~ s/^[AGCTN]//;
 
@@ -36,7 +43,5 @@ while (!eof $csfasta_file){
             }
 
     }
-    print $header;
-    print join " ", @result_string;
-    print "\n";
+    return @result_string;
 }

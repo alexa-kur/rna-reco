@@ -6,11 +6,11 @@ open my $csfasta_file,"<","$ARGV[0]";
 while (!eof $csfasta_file){
     my $header = <$csfasta_file>;
     my $string = <$csfasta_file>;
-
-    print $header;
-    my @str = translate_string($string);
-    print join " ",remove_adaptor(join_regular_hex(error_correction(@str))); 
-    print "\n";
+    if ($string =~ m/\./){next};
+        print $header;
+        my @str = translate_string($string);
+        print join " ",remove_adaptor(join_regular_hex(error_correction(@str))); 
+        print "\n";
 }
 
 sub translate_string {
@@ -181,7 +181,7 @@ sub remove_adaptor {
     my @string =@_;
     my @result_string;
     for (my $i = 0;$i < scalar @string;$i++){
-        if ($string[$i] =~m/(A{1,2})(\d+)-(\d+)/ and ($3 -$2) > 3){
+        if ($string[$i] =~m/A{1,2}(\d+)-(\d+)/ and ($3 -$2) > 3){
             @string = @string[0..($i-1)];
             last
     }}

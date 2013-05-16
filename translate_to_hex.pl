@@ -1,12 +1,5 @@
 #!/usr/bin/perl
 use strict;
-open my $code_file,"<","../reference/hexG.x";
-my %codes;
-while(<$code_file>){
-    chomp;
-    my @a = split "\t", $_;
-    $codes{$a[1]} = $a[0]
-    }
 
 open my $csfasta_file,"<","$ARGV[0]";
 while (!eof $csfasta_file){
@@ -19,6 +12,13 @@ while (!eof $csfasta_file){
 }
 
 sub translate_string {
+open my $code_file,"<","../reference/hexG.x";
+my %codes;
+while(<$code_file>){
+    chomp;
+    my @a = split "\t", $_;
+    $codes{$a[1]} = $a[0]
+    }
     my $string = $_[0];
     chomp $string;
     $string =~ s/^[AGCTN]//;

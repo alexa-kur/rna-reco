@@ -179,9 +179,12 @@ sub hd  { #subroutine for calculate Hamming distance
 
 sub remove_adaptor {
     my @string =@_;
-    my @result_string;
     for (my $i = 0;$i < scalar @string;$i++){
-        if ($string[$i] =~m/A{1,2}(\d+)-(\d+)/ and ($3 -$2) > 3){
+        if ($string[$i] =~m/A{1,2}(\d+)-(\d+)/ and ($2 -$1) > 3){
+            @string = @string[0..($i-1)];
+            last
+        }
+        if ($string[$i] =~m/A/ and ($string[$i+1] =~m/A/ or $string[$i+2] =~m/A/)){
             @string = @string[0..($i-1)];
             last
     }}

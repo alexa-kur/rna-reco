@@ -7,26 +7,22 @@ while (!eof $csfasta_file){
     my $string = <$csfasta_file>;
 
     print $header;
-    print join " ", join_regular_hex(translate_string($string));
+    my @str = translate_string($string);
+    print join " ",remove_adaptor(join_regular_hex(error_correction(@str))); 
     print "\n";
 }
 
 sub translate_string {
-open my $code_file,"<","../reference/hexG.x";
-my %codes;
-while(<$code_file>){
-    chomp;
-    my @a = split "\t", $_;
-    $codes{$a[1]} = $a[0]
+    open my $code_file,"<","../reference/hexG.x";
+    my %codes;
+    while(<$code_file>){
+        chomp;
+        my @a = split "\t", $_;
+        $codes{$a[1]} = $a[0]
     }
     my $string = $_[0];
     chomp $string;
     $string =~ s/^[AGCTN]//;
-
-    #foreach (keys %codes){
-    #    $string =~s/$_/ $codes{$_} /g;
-    #}
-    #    print $header,$string
     my @string_letters = split "", $string;
     my @result_string = ();
     for (my $i = 0; $i < scalar(@string_letters) - 5; $i++){
@@ -36,13 +32,10 @@ while(<$code_file>){
             if ($read_hex eq $_){
                 push @result_string, $codes{$_};
                 $ok_flag = 1
-            }
-        }
-            if ($ok_flag == 0){
-                push @result_string, $read_hex
-            }
-
-    }
+        }}
+        if ($ok_flag == 0){
+            push @result_string, $read_hex
+    }}
     return @result_string;
 }
 
@@ -88,7 +81,7 @@ sub join_regular_hex {
         
         #if known hexamer, but new in chain
         elsif ($str_p{'fr_l'} eq ''){
-            $string[$i] =~ m/^([GHMA])(\d{1,2})/;
+            $string[$i] =~ m/^([GHMA]{1,2})(\d{1,2})/;
             $str_p{'fr_l'} = $1;
             $str_p{'fr_N'} = $2;
             $str_p{'cur_N'} = $2;
@@ -100,15 +93,15 @@ sub join_regular_hex {
         }
         #if new hexamer and chain exists
         elsif ($str_p{'fr_l'} ne ''){
-            $string[$i] =~ m/^([GHMA])(\d{1,2})/;
+            $string[$i] =~ m/^([GHMA]{1,2})(\d{1,2})/;
             my $f1 = $1;
             my $f2 = $2;
             #continue chain
-            if ( $f1 eq 'G'){
+            if ( $f1 =~ /G/){
                 $f1 = $str_p{'fr_l'};
                 $f2 = $str_p{'cur_N'} + 1;
             }
-            if ($str_p{'fr_l'} eq 'G' and $f1 ne 'G'){
+            if ($str_p{'fr_l'} =~ /G/ and $f1 !=~ /G/){
                 $str_p{'fr_l'} = $f1;
                 $str_p{'fr_N'} = $f2 - ($str_p{'cur_N'}-$str_p{'fr_N'}+1);
                 $str_p{'cur_N'} =$f2 -1;
@@ -134,12 +127,63 @@ sub join_regular_hex {
                 if ($i == scalar(@string) -1){
                     my $out_string = $str_p{'fr_l'}.$str_p{'fr_N'}."-".$str_p{'cur_N'};
                     push (@translated_string, $out_string);
-                }   
-            }
-        }
-    }
-
-
-
+    }}}}
     return @translated_string
 }
+
+sub error_correction {
+    ##This subroutine is made for some error corrections with one color mismatch
+    #input is @translated_string from join_regular_hex
+    #output can be used for join_regular_hex
+    open my $code_file,"<","../reference/hexG.x";
+    my %codes;
+    while(<$code_file>){
+        chomp;
+        my @a = split "\t", $_;
+        $codes{$a[0]} = $a[1]
+    }
+    my @hexes = @_;
+    for (my $i = 0;$i < scalar(@hexes);$i++){
+        if ($i > 1 and $hexes[$i] =~m/\d{6}/ and $hexes[$i-1] =~m/([AMHG])(\d{1,2})/){
+            my $let = $1;
+            my $num = $2+1;
+            my $scan = $let.$num;
+            my $hd = hd($hexes[$i], $codes{$scan});
+            $hexes[$i] = $scan if $hd ==1;
+            $hexes[$i] = $1.$scan if $hd ==2;
+
+    }}
+    for (my $i = scalar(@hexes)-1;$i>-1;$i--){
+        if ($i < scalar(@hexes)-2 and $hexes[$i] =~m/\d{6}/ and $hexes[$i+1] =~m/([AMHG])(\d{1,2})/){
+            my $let = $1;
+            my $num = $2-1;
+            my $scan = $let.$num;
+            my $hd = hd($hexes[$i], $codes{$scan});
+            $hexes[$i] = $scan if $hd ==1;
+            $hexes[$i] = $1.$scan if $hd ==2;
+
+    }}
+    return @hexes;
+}
+
+sub hd  { #subroutine for calculate Hamming distance
+    my ($k,$l) = @_;
+    my $mismatch_num = 0;
+    my $len = length($k);
+    for (my $i = 0;$i<$len;$i++){
+        ++$mismatch_num if substr($k,$i, 1) ne substr($l,$i,1);
+    }
+    return $mismatch_num
+}
+
+sub remove_adaptor {
+    my @string =@_;
+    my @result_string;
+    for (my $i = 0;$i < scalar @string;$i++){
+        if ($string[$i] =~m/(A{1,2})(\d+)-(\d+)/ and ($3 -$2) > 3){
+            @string = @string[0..($i-1)];
+            last
+    }}
+    return @string
+}
+

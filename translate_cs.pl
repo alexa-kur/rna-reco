@@ -9,7 +9,7 @@ while (!eof $csfasta_file){
     if ($string =~ m/\./){next};
         print $header;
         my @str = translate_string($string);
-        print join " ",remove_adaptor(join_regular_hex(error_correction(@str))); 
+        print join "",create_flat_string(join_regular_hex(error_correction(@str))); 
         print "\n";
 }
 
@@ -190,4 +190,16 @@ sub remove_adaptor {
     }}
     return @string
 }
-
+sub create_flat_string {
+    ##we  finish! create good flat string
+    my @string = @_;
+    my @result_string;
+    foreach my $string (@string){
+        push (@result_string, "N") if $string =~m/\d{6}/;
+        $string =~/([AMHG]{1,2})(\d{1,2})-(\d{1,2})/;
+        my $letter = $1;
+        my $num = $3 - $2;
+        for (0..$num){push (@result_string,$letter)}
+    }
+    return @result_string;
+}

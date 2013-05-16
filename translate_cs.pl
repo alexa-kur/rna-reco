@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 
+
 open my $csfasta_file,"<","$ARGV[0]";
 while (!eof $csfasta_file){
     my $header = <$csfasta_file>;

@@ -8,8 +8,8 @@ while (!eof $csfasta_file){
     my $string = <$csfasta_file>;
     if ($string =~ m/\./){next};
         print $header;
-        my @str = translate_string($string);
-        print join "",create_flat_string(join_regular_hex(error_correction(@str))); 
+        my @str = remove_adaptor(join_regular_hex(error_correction(translate_string($string))));
+        print join " ",@str;
         print "\n";
 }
 
@@ -82,7 +82,7 @@ sub join_regular_hex {
         
         #if known hexamer, but new in chain
         elsif ($str_p{'fr_l'} eq ''){
-            $string[$i] =~ m/^([GHMA]{1,2})(\d{1,2})/;
+            $string[$i] =~ m/^([GHMA])(\d{1,2})/i;
             $str_p{'fr_l'} = $1;
             $str_p{'fr_N'} = $2;
             $str_p{'cur_N'} = $2;
@@ -94,7 +94,7 @@ sub join_regular_hex {
         }
         #if new hexamer and chain exists
         elsif ($str_p{'fr_l'} ne ''){
-            $string[$i] =~ m/^([GHMA]{1,2})(\d{1,2})/;
+            $string[$i] =~ m/^([GHMA])(\d{1,2})/i;
             my $f1 = $1;
             my $f2 = $2;
             #continue chain
@@ -102,7 +102,7 @@ sub join_regular_hex {
                 $f1 = $str_p{'fr_l'};
                 $f2 = $str_p{'cur_N'} + 1;
             }
-            if ($str_p{'fr_l'} =~ /G/ and $f1 !=~ /G/){
+            if ($str_p{'fr_l'} =~ /G/i and $f1 !=~ /G/i){
                 $str_p{'fr_l'} = $f1;
                 $str_p{'fr_N'} = $f2 - ($str_p{'cur_N'}-$str_p{'fr_N'}+1);
                 $str_p{'cur_N'} =$f2 -1;
@@ -145,23 +145,25 @@ sub error_correction {
     }
     my @hexes = @_;
     for (my $i = 0;$i < scalar(@hexes);$i++){
-        if ($i > 1 and $hexes[$i] =~m/\d{6}/ and $hexes[$i-1] =~m/([AMHG])(\d{1,2})/){
+        if ($i > 1 and $hexes[$i] =~m/\d{6}/ and $hexes[$i-1] =~m/([AMHG])(\d{1,2})/i){
             my $let = $1;
             my $num = $2+1;
             my $scan = $let.$num;
             my $hd = hd($hexes[$i], $codes{$scan});
             $hexes[$i] = $scan if $hd ==1;
-            $hexes[$i] = $1.$scan if $hd ==2;
+            $hexes[$i] = $scan if $hd ==2;
+            $hexes[$i] = $scan if $hd ==3;
 
     }}
     for (my $i = scalar(@hexes)-1;$i>-1;$i--){
-        if ($i < scalar(@hexes)-2 and $hexes[$i] =~m/\d{6}/ and $hexes[$i+1] =~m/([AMHG])(\d{1,2})/){
+        if ($i < scalar(@hexes)-2 and $hexes[$i] =~m/\d{6}/ and $hexes[$i+1] =~m/([AMHG])(\d{1,2})/i){
             my $let = $1;
             my $num = $2-1;
             my $scan = $let.$num;
             my $hd = hd($hexes[$i], $codes{$scan});
             $hexes[$i] = $scan if $hd ==1;
-            $hexes[$i] = $1.$scan if $hd ==2;
+            $hexes[$i] = $scan if $hd ==2;
+            $hexes[$i] = $scan if $hd ==3;
 
     }}
     return @hexes;
@@ -180,7 +182,7 @@ sub hd  { #subroutine for calculate Hamming distance
 sub remove_adaptor {
     my @string =@_;
     for (my $i = 0;$i < scalar @string;$i++){
-        if ($string[$i] =~m/A{1,2}(\d+)-(\d+)/ and ($2 -$1) > 3){
+        if ($string[$i] =~m/A{1,2}(\d+)-(\d+)/ and ($2 -$1) > 1){
             @string = @string[0..($i-1)];
             last
         }
@@ -195,8 +197,8 @@ sub create_flat_string {
     my @string = @_;
     my @result_string;
     foreach my $string (@string){
-        push (@result_string, "N") if $string =~m/\d{6}/;
-        $string =~/([AMHG]{1,2})(\d{1,2})-(\d{1,2})/;
+        push (@result_string, ".") if $string =~m/\d{6}/;
+        $string =~/([AMHG])(\d{1,2})-(\d{1,2})/i;
         my $letter = $1;
         my $num = $3 - $2;
         for (0..$num){push (@result_string,$letter)}

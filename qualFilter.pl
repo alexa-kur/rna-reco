@@ -20,7 +20,7 @@ while (!eof $csfile){
     foreach (@qual_string){$sum +=$_}
     $sum =$sum/scalar(@qual_string);
 
-    if ($sum > 22){
+    if ($sum > 28){
         output_cs($string[0],$string[1])
     }
 }

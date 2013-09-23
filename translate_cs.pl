@@ -152,7 +152,7 @@ sub error_correction {
             my $hd = hd($hexes[$i], $codes{$scan});
             $hexes[$i] = $scan if $hd ==1;
             $hexes[$i] = $scan if $hd ==2;
-            $hexes[$i] = $scan if $hd ==3;
+           # $hexes[$i] = $scan if $hd ==3;
 
     }}
     for (my $i = scalar(@hexes)-1;$i>-1;$i--){
@@ -163,7 +163,7 @@ sub error_correction {
             my $hd = hd($hexes[$i], $codes{$scan});
             $hexes[$i] = $scan if $hd ==1;
             $hexes[$i] = $scan if $hd ==2;
-            $hexes[$i] = $scan if $hd ==3;
+           # $hexes[$i] = $scan if $hd ==3;
 
     }}
     return @hexes;
